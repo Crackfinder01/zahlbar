@@ -1,0 +1,46 @@
+{
+  "name": "Zahlbar - bank e-mail with camt.054 file marks invoices as paid",
+  "nodes": [
+    {
+      "parameters": { "format": "resolved", "downloadAttachments": true, "options": {} },
+      "name": "Bank e-mail (IMAP)",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ZAHLBAR_URL }}/v1/reconcile",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [ { "name": "Content-Type", "value": "application/xml" } ] },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "attachment_0",
+        "options": {}
+      },
+      "name": "Zahlbar: reconcile",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $input.first().json;\nreturn [{ json: { paid: r.matched.length, partial: r.partial.length, unmatched: r.unmatched.length, duplicates: r.duplicates } }];"
+      },
+      "name": "Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 0]
+    }
+  ],
+  "connections": {
+    "Bank e-mail (IMAP)": { "main": [ [ { "node": "Zahlbar: reconcile", "type": "main", "index": 0 } ] ] },
+    "Zahlbar: reconcile": { "main": [ [ { "node": "Summary", "type": "main", "index": 0 } ] ] }
+  },
+  "settings": {},
+  "meta": { "templateCredsSetupCompleted": false },
+  "pinData": {}
+}

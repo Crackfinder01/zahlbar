@@ -1,0 +1,26 @@
+{
+  "name": "n8n-nodes-zahlbar",
+  "version": "0.1.0",
+  "description": "n8n node for Zahlbar: create Swiss QR-bill invoices, import camt.054 bank files and list who still has to pay.",
+  "license": "MIT",
+  "keywords": ["n8n-community-node-package", "qr-bill", "qr-rechnung", "swiss", "invoice", "camt.054"],
+  "author": { "name": "Zahlbar contributors" },
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc && cp nodes/Zahlbar/zahlbar.svg dist/nodes/Zahlbar/",
+    "test": "node --test test/*.test.js"
+  },
+  "files": ["dist"],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": ["dist/credentials/ZahlbarApi.credentials.js"],
+    "nodes": ["dist/nodes/Zahlbar/Zahlbar.node.js"]
+  },
+  "devDependencies": {
+    "n8n-workflow": "*",
+    "typescript": "^5.9.0"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  }
+}

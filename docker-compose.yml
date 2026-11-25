@@ -1,0 +1,13 @@
+services:
+  zahlbar:
+    build: .
+    # image: ghcr.io/crackfinder01/zahlbar:latest   # once images are published
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"     # put a reverse proxy with HTTPS in front before exposing it
+    env_file: .env
+    volumes:
+      - zahlbar-data:/data
+
+volumes:
+  zahlbar-data:

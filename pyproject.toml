@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zahlbar"
+version = "0.1.0"
+description = "Swiss QR-bills that tell you who paid: QR-bill API + bank-file (camt.054/053) reconciliation, with CLI, MCP server and n8n node."
+readme = "README.md"
+license = "AGPL-3.0-only"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "Zahlbar contributors" }]
+keywords = ["qr-bill", "qr-rechnung", "qr-facture", "swiss", "invoice", "camt.054", "iso20022", "mcp", "n8n", "self-hosted"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+  "Topic :: Office/Business :: Financial :: Accounting",
+]
+dependencies = [
+  "qrbill>=1.2,<2",
+  "pydantic>=2.6,<3",
+  "fastapi>=0.110",
+  "uvicorn>=0.29",
+  "svglib>=1.5",
+  "reportlab>=4",
+  "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+mcp = ["mcp>=2.3,<3"]
+dev = ["pytest>=8", "mcp>=2.3,<3"]
+
+[project.scripts]
+zahlbar = "zahlbar.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

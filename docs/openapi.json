@@ -1,0 +1,851 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Zahlbar API",
+    "description": "\n**Zahlbar** creates Swiss QR-bills and tells you who paid.\n\n1. `POST /v1/invoices` creates an invoice with a valid QR reference.\n2. `GET /v1/invoices/{id}/bill.pdf` returns the printable QR-bill.\n3. `POST /v1/reconcile` takes the camt.054 / camt.053 file from your bank and marks invoices as paid.\n4. `GET /v1/invoices?status=overdue` lists who still has to pay.\n\nOpen source (AGPL-3.0) · self-hostable · built for n8n and AI agents.\n",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/v1/bills": {
+      "post": {
+        "tags": [
+          "bills"
+        ],
+        "summary": "Create Bill",
+        "description": "Render a QR-bill. `format=json` returns the QR payload without an image.",
+        "operationId": "create_bill_v1_bills_post",
+        "parameters": [
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "svg",
+                "pdf",
+                "json"
+              ],
+              "type": "string",
+              "default": "svg",
+              "title": "Format"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "image/svg+xml": {},
+              "application/pdf": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/validate": {
+      "post": {
+        "tags": [
+          "bills"
+        ],
+        "summary": "Validate",
+        "description": "Check bill data without rendering it. Returns the list of problems.",
+        "operationId": "validate_v1_validate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Validate V1 Validate Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/references": {
+      "post": {
+        "tags": [
+          "bills"
+        ],
+        "summary": "Create Reference",
+        "description": "Build a QRR (for a QR-IBAN) or an RF creditor reference from an invoice number.",
+        "operationId": "create_reference_v1_references_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReferenceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Create Reference V1 References Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/invoices": {
+      "post": {
+        "tags": [
+          "invoices"
+        ],
+        "summary": "Create Invoice",
+        "operationId": "create_invoice_v1_invoices_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvoiceCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Create Invoice V1 Invoices Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "invoices"
+        ],
+        "summary": "List Invoices",
+        "operationId": "list_invoices_v1_invoices_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "all",
+                    "open",
+                    "partial",
+                    "paid",
+                    "unpaid",
+                    "overdue"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response List Invoices V1 Invoices Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/invoices/{invoice_id}": {
+      "get": {
+        "tags": [
+          "invoices"
+        ],
+        "summary": "Get Invoice",
+        "operationId": "get_invoice_v1_invoices__invoice_id__get",
+        "parameters": [
+          {
+            "name": "invoice_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Invoice Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Invoice V1 Invoices  Invoice Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "invoices"
+        ],
+        "summary": "Delete Invoice",
+        "operationId": "delete_invoice_v1_invoices__invoice_id__delete",
+        "parameters": [
+          {
+            "name": "invoice_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Invoice Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/invoices/{invoice_id}/bill.{fmt}": {
+      "get": {
+        "tags": [
+          "invoices"
+        ],
+        "summary": "Invoice Bill",
+        "operationId": "invoice_bill_v1_invoices__invoice_id__bill__fmt__get",
+        "parameters": [
+          {
+            "name": "invoice_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Invoice Id"
+            }
+          },
+          {
+            "name": "fmt",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "svg",
+                "pdf",
+                "json"
+              ],
+              "type": "string",
+              "title": "Fmt"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/reconcile": {
+      "post": {
+        "tags": [
+          "reconciliation"
+        ],
+        "summary": "Reconcile",
+        "description": "Send the raw camt.054 or camt.053 XML as the request body. Importing the same file twice is safe.",
+        "operationId": "reconcile_v1_reconcile_post",
+        "requestBody": {
+          "content": {
+            "application/xml": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Reconcile V1 Reconcile Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/payments/unmatched": {
+      "get": {
+        "tags": [
+          "reconciliation"
+        ],
+        "summary": "Unmatched",
+        "description": "Payments that could not be linked to an invoice (wrong or missing reference).",
+        "operationId": "unmatched_v1_payments_unmatched_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response Unmatched V1 Payments Unmatched Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Address": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 70,
+            "minLength": 1,
+            "title": "Name",
+            "examples": [
+              "Muster AG"
+            ]
+          },
+          "street": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 70
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Street",
+            "examples": [
+              "Bahnhofstrasse"
+            ]
+          },
+          "house_num": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "House Num",
+            "examples": [
+              "1"
+            ]
+          },
+          "pcode": {
+            "type": "string",
+            "maxLength": 16,
+            "minLength": 1,
+            "title": "Pcode",
+            "examples": [
+              "8001"
+            ]
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 35,
+            "minLength": 1,
+            "title": "City",
+            "examples": [
+              "Zürich"
+            ]
+          },
+          "country": {
+            "type": "string",
+            "maxLength": 2,
+            "minLength": 2,
+            "title": "Country",
+            "default": "CH",
+            "examples": [
+              "CH"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "pcode",
+          "city"
+        ],
+        "title": "Address",
+        "description": "Structured address (type \"S\").\n\nSince 21 November 2025 the Swiss Implementation Guidelines only allow\nstructured addresses on QR-bills, so the old two-line \"combined\" address\nis deliberately not supported."
+      },
+      "BillRequest": {
+        "properties": {
+          "account": {
+            "type": "string",
+            "title": "Account",
+            "description": "IBAN or QR-IBAN of the creditor (CH or LI)",
+            "examples": [
+              "CH4431999123000889012"
+            ]
+          },
+          "creditor": {
+            "$ref": "#/components/schemas/Address"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 999999999.99,
+                "minimum": 0.01
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount",
+            "description": "Leave empty for an open amount"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "CHF",
+              "EUR"
+            ],
+            "title": "Currency",
+            "default": "CHF"
+          },
+          "debtor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Address"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional. Only add it if you need it on the slip."
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference",
+            "description": "QRR (27 digits, QR-IBAN only) or SCOR (RF...) reference"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 140,
+            "title": "Message",
+            "description": "Unstructured message shown on the slip",
+            "default": ""
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "de",
+              "fr",
+              "it"
+            ],
+            "title": "Language",
+            "default": "en"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "account",
+          "creditor"
+        ],
+        "title": "BillRequest",
+        "description": "Everything needed to draw one Swiss QR-bill."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "InvoiceCreate": {
+        "properties": {
+          "number": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Number",
+            "examples": [
+              "2026-0042"
+            ]
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 999999999.99,
+                "minimum": 0.01
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
+            "title": "Amount"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "CHF",
+              "EUR"
+            ],
+            "title": "Currency",
+            "default": "CHF"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "account": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account",
+            "description": "Defaults to the configured creditor account"
+          },
+          "creditor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Address"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Defaults to the configured creditor"
+          },
+          "debtor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Address"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 140,
+            "title": "Message",
+            "default": ""
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "reference_prefix": {
+            "type": "string",
+            "maxLength": 12,
+            "title": "Reference Prefix",
+            "default": ""
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "de",
+              "fr",
+              "it"
+            ],
+            "title": "Language",
+            "default": "en"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "number",
+          "amount"
+        ],
+        "title": "InvoiceCreate",
+        "description": "A tracked invoice. The reference is generated when not given."
+      },
+      "ReferenceRequest": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "qrr",
+              "scor"
+            ],
+            "title": "Kind"
+          },
+          "number": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Number",
+            "description": "Your invoice number"
+          },
+          "prefix": {
+            "type": "string",
+            "maxLength": 12,
+            "title": "Prefix",
+            "description": "QRR only: optional bank customer id (digits)",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "number"
+        ],
+        "title": "ReferenceRequest"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "bills",
+      "description": "Stateless QR-bill generation and validation"
+    },
+    {
+      "name": "invoices",
+      "description": "Tracked invoices"
+    },
+    {
+      "name": "reconciliation",
+      "description": "Match bank payments with invoices"
+    }
+  ]
+}

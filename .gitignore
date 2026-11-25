@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+.pytest_cache/
+.env
+*.sqlite3
+integrations/n8n/n8n-nodes-zahlbar/node_modules/
+!integrations/n8n/n8n-nodes-zahlbar/dist/
