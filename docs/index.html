@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zahlbar — Swiss QR-bills that tell you who paid (open source)</title>
+<meta name="description" content="Open-source Swiss QR-bill API with camt.054 bank-file reconciliation. Self-host it, automate it with n8n, or let your AI agent do your invoicing.">
+<style>
+  :root { --red:#d52b1e; --ink:#151515; --muted:#5b5b5b; --line:#e6e6e6; --bg:#fbfaf8; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:17px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:var(--ink); background:var(--bg); }
+  a { color:var(--red); }
+  .wrap { max-width:960px; margin:0 auto; padding:0 24px; }
+  header { display:flex; justify-content:space-between; align-items:center; padding:20px 0; }
+  .logo { font-weight:800; letter-spacing:-.5px; font-size:20px; display:flex; gap:10px; align-items:center; }
+  .cross { width:22px; height:22px; background:var(--red); border-radius:4px; position:relative; }
+  .cross:before,.cross:after { content:""; position:absolute; background:#fff; }
+  .cross:before { left:9px; top:4px; width:4px; height:14px; } .cross:after { left:4px; top:9px; width:14px; height:4px; }
+  nav a { margin-left:18px; color:var(--ink); text-decoration:none; font-size:15px; }
+  .lang a { margin-left:8px; font-size:14px; color:var(--muted); }
+  .hero { padding:56px 0 36px; }
+  h1 { font-size:clamp(34px,5vw,54px); line-height:1.05; letter-spacing:-1.5px; margin:0 0 18px; }
+  h1 em { font-style:normal; color:var(--red); }
+  .sub { font-size:20px; color:var(--muted); max-width:640px; }
+  .cta { display:flex; gap:12px; flex-wrap:wrap; margin-top:28px; }
+  .btn { display:inline-block; padding:12px 18px; border-radius:8px; text-decoration:none; font-weight:600; }
+  .btn.primary { background:var(--ink); color:#fff; } .btn.ghost { border:1px solid var(--ink); color:var(--ink); }
+  pre { background:#141414; color:#eaeaea; padding:18px; border-radius:10px; overflow:auto; font-size:14px; line-height:1.5; }
+  .steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin:40px 0; }
+  .step { border:1px solid var(--line); background:#fff; border-radius:12px; padding:18px; }
+  .step b { display:block; color:var(--red); font-size:13px; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; }
+  h2 { font-size:28px; letter-spacing:-.5px; margin:56px 0 12px; }
+  .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:20px; }
+  ul.check { list-style:none; padding:0; } ul.check li { padding-left:26px; position:relative; margin:8px 0; }
+  ul.check li:before { content:"✓"; position:absolute; left:0; color:var(--red); font-weight:700; }
+  table { width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  th,td { text-align:left; padding:12px 14px; border-bottom:1px solid var(--line); font-size:15px; }
+  .i18n { border-top:1px solid var(--line); margin-top:56px; padding-top:24px; }
+  footer { color:var(--muted); font-size:14px; padding:40px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo"><span class="cross" aria-hidden="true"></span>Zahlbar</div>
+    <nav>
+      <a href="#how">How it works</a>
+      <a href="#agents">AI agents</a>
+      <a href="https://github.com/Crackfinder01/zahlbar">GitHub</a>
+      <span class="lang"><a href="#de">DE</a><a href="#fr">FR</a></span>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h1>Swiss QR-bills that tell you <em>who paid</em>.</h1>
+    <p class="sub">Create QR-bills, drop in the camt.054 file from your bank, and see at a glance which invoices are paid, partly paid or overdue. Open source. Runs on your own machine. Built for n8n and AI agents.</p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/Crackfinder01/zahlbar">Star it on GitHub</a>
+      <a class="btn ghost" href="https://github.com/Crackfinder01/zahlbar#quick-start">Self-host in 2 minutes</a>
+    </div>
+  </section>
+
+<pre><code>$ zahlbar invoice create --number 2026-0042 --amount 1949.75 --due 2026-12-31
+$ zahlbar invoice bill 3f9c2a1b7d04 -o invoice.pdf
+$ zahlbar reconcile ~/Downloads/camt054.xml
+{ "matched": 7, "partial": 1, "unmatched": 0, "duplicates": 0 }
+$ zahlbar invoice list --status overdue</code></pre>
+
+  <div class="steps" id="how">
+    <div class="step"><b>1 · Bill</b>Valid QR reference generated for you — QRR with a QR-IBAN, RF otherwise.</div>
+    <div class="step"><b>2 · Print</b>A4 PDF or SVG in German, French, Italian or English.</div>
+    <div class="step"><b>3 · Reconcile</b>Import camt.054 / camt.053. Same file twice? Nothing is counted twice.</div>
+    <div class="step"><b>4 · Follow up</b>One call lists who is late — ready for your reminder workflow.</div>
+  </div>
+
+  <h2 id="agents">Let your agent do the invoicing</h2>
+  <div class="grid2">
+    <div>
+      <p>Zahlbar ships a CLI with JSON output, an <strong>MCP server</strong> and a <strong>skill</strong>, so Claude, ChatGPT, Cursor or OpenClaw can bill clients and check payments for you:</p>
+      <p><em>“Bill Beispiel GmbH 1'949.75 CHF for November, due end of December.”</em><br>
+         <em>“Here is this month's camt.054 — who still owes me money?”</em></p>
+    </div>
+<pre><code>{ "mcpServers": {
+    "zahlbar": { "command": "zahlbar",
+                 "args": ["mcp"] } } }</code></pre>
+  </div>
+
+  <h2>Automate it with n8n</h2>
+  <p>A community node plus ready-made workflows: your bank e-mails the camt.054 → invoices are marked paid; every morning → list of overdue invoices.</p>
+
+  <h2>Why Zahlbar</h2>
+  <div class="grid2">
+    <ul class="check">
+      <li>Open source (AGPL-3.0), no account, no tracking</li>
+      <li>Structured addresses only — compliant since 21 Nov 2025</li>
+      <li>REST API with OpenAPI docs, API-key auth</li>
+    </ul>
+    <ul class="check">
+      <li>Payer names and IBANs from bank files are never stored</li>
+      <li>Docker + SQLite: one container, one file</li>
+      <li>CHF and EUR, Swiss and Liechtenstein accounts</li>
+    </ul>
+  </div>
+
+  <h2>Pricing</h2>
+  <table>
+    <tr><th>Self-hosted</th><td>Free forever. Everything is open source.</td></tr>
+    <tr><th>Hosted</th><td>Coming later, for people who do not want to run a server. Follow the repository to be notified.</td></tr>
+  </table>
+
+  <div class="i18n" id="de">
+    <h2>Deutsch</h2>
+    <p><strong>QR-Rechnungen, die Ihnen sagen, wer bezahlt hat.</strong> Rechnung erstellen, camt.054-Datei aus dem E-Banking einlesen, sofort sehen, was bezahlt, teilweise bezahlt oder überfällig ist. Open Source, selbst hostbar, gemacht für n8n und KI-Agenten.</p>
+  </div>
+  <div class="i18n" id="fr">
+    <h2>Français</h2>
+    <p><strong>Des factures QR qui vous disent qui a payé.</strong> Créez vos QR-factures, importez le fichier camt.054 de votre e-banking et voyez tout de suite ce qui est payé, partiellement payé ou en retard. Open source, auto-hébergeable, pensé pour n8n et les agents IA.</p>
+  </div>
+
+  <footer>Zahlbar is an independent open-source project, not affiliated with SIX, PostFinance or any bank. · <a href="https://github.com/Crackfinder01/zahlbar/blob/main/LICENSE">AGPL-3.0</a></footer>
+</div>
+</body>
+</html>
